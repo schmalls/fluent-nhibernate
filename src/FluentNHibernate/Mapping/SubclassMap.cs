@@ -281,9 +281,30 @@ namespace FluentNHibernate.Mapping
             attributes.Set("Extends", Layer.UserSupplied, type);
         }
 
+        /// <summary>
+        /// (optional) Specifies the entity from which this subclass descends/extends.
+        /// </summary>
+        /// <param name="entityName">Entity name of the entity to extend</param>
+        /// <typeparam name="TOther">Type of the entity to extend</typeparam>
+        public void Extends<TOther>(string entityName)
+        {
+            Extends(typeof(TOther), entityName);
+        }
+
+        /// <summary>
+        /// (optional) Specifies the entity from which this subclass descends/extends.
+        /// </summary>
+        /// <param name="type">Type of the entity to extend</param>
+        /// <param name="entityName">Entity name of the entity to extend</param>
+        public void Extends(Type type, string entityName)
+        {
+            attributes.Set("Extends", Layer.UserSupplied, type);
+            attributes.Set("ExtendsEntityName", Layer.UserSupplied, entityName);
+        }
+
         SubclassMapping IIndeterminateSubclassMappingProvider.GetSubclassMapping(SubclassType type)
         {
-            var mapping = new SubclassMapping(type);
+            var mapping = new SubclassMapping(type, attributes.Clone());
 
             GenerateNestedSubclasses(mapping);
 
@@ -333,6 +354,11 @@ namespace FluentNHibernate.Mapping
         Type IIndeterminateSubclassMappingProvider.Extends
         {
             get { return attributes.GetOrDefault<Type>("Extends"); }
+        }
+
+        string IIndeterminateSubclassMappingProvider.ExtendsEntityName
+        {
+            get { return attributes.GetOrDefault<string>("ExtendsEntityName"); }
         }
 
         void GenerateNestedSubclasses(SubclassMapping mapping)

@@ -33,6 +33,17 @@ namespace FluentNHibernate.MappingModel.ClassBased
             get { return attributes.GetOrDefault<Type>("Extends"); }
         }
 
+        /// <summary>
+        /// Set the entity name this subclass extends.
+        /// Note: This doesn't actually get output into the XML, it's
+        /// instead used as a marker for the <see cref="SeparateSubclassVisitor"/>
+        /// to pair things up.
+        /// </summary>
+        public string ExtendsEntityName
+        {
+            get { return attributes.GetOrDefault<string>("ExtendsEntityName"); }
+        }
+
         public override void AcceptVisitor(IMappingModelVisitor visitor)
         {
             visitor.ProcessSubclass(this);

@@ -18,7 +18,7 @@ namespace FluentNHibernate.Visitors
 
         public override void ProcessClass(ClassMapping mapping)
         {
-            var subclasses = FindClosestSubclasses(mapping.Type);
+            var subclasses = FindClosestSubclasses(mapping.Type, mapping.EntityName);
 
             foreach (var provider in subclasses)
                 mapping.AddSubclass(provider.GetSubclassMapping(GetSubclassType(mapping)));
@@ -28,7 +28,7 @@ namespace FluentNHibernate.Visitors
 
         public override void ProcessSubclass(SubclassMapping mapping)
         {
-            var subclasses = FindClosestSubclasses(mapping.Type);
+            var subclasses = FindClosestSubclasses(mapping.Type, mapping.EntityName);
 
             foreach (var provider in subclasses)
                 mapping.AddSubclass(provider.GetSubclassMapping(mapping.SubclassType));
@@ -36,11 +36,17 @@ namespace FluentNHibernate.Visitors
             base.ProcessSubclass(mapping);
         }
 
-        private IEnumerable<IIndeterminateSubclassMappingProvider> FindClosestSubclasses(Type type)
+        private IEnumerable<IIndeterminateSubclassMappingProvider> FindClosestSubclasses(Type type, string entityName)
         {
-            var extendsSubclasses = subclassProviders
-                .Where(x => x.Extends == type);
-            var subclasses = SortByDistanceFrom(type, subclassProviders.Except(extendsSubclasses));
+            IEnumerable<IIndeterminateSubclassMappingProvider> extendsSubclasses;
+            IDictionary<int, IList<IIndeterminateSubclassMappingProvider>> subclasses;
+            if (string.IsNullOrEmpty(entityName)) {
+                extendsSubclasses = subclassProviders.Where(x => x.Extends == type);
+                subclasses = SortByDistanceFrom(type, subclassProviders.Except(extendsSubclasses));
+            } else {
+                extendsSubclasses = subclassProviders.Where(x => (x.Extends == type) && (x.ExtendsEntityName == entityName));
+                subclasses = new Dictionary<int, IList<IIndeterminateSubclassMappingProvider>>();
+            }
 
             if (subclasses.Keys.Count == 0 && !extendsSubclasses.Any())
                 return new IIndeterminateSubclassMappingProvider[0];
