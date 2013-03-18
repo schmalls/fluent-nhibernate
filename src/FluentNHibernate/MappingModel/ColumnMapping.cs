@@ -92,6 +92,11 @@ namespace FluentNHibernate.MappingModel
             get { return attributes.GetOrDefault<string>("Default"); }
         }
 
+        public string Formula
+        {
+            get { return attributes.GetOrDefault<string>("Formula"); }
+        }
+
         public ColumnMapping Clone()
         {
             return new ColumnMapping(attributes.Clone());

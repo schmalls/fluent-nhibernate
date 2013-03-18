@@ -14,7 +14,7 @@ namespace FluentNHibernate.Mapping
         readonly FetchTypeExpression<ManyToOnePart<TOther>> fetch;
         readonly NotFoundExpression<ManyToOnePart<TOther>> notFound;
         readonly CascadeExpression<ManyToOnePart<TOther>> cascade;
-        readonly IList<string> columns = new List<string>();
+        readonly IList<KeyValuePair<string, bool>> columnsAndFormulas = new List<KeyValuePair<string, bool>>();
         bool nextBool = true;
         readonly AttributeStore attributes = new AttributeStore();
         readonly AttributeStore columnAttributes = new AttributeStore();
@@ -220,8 +220,8 @@ namespace FluentNHibernate.Mapping
         /// <param name="name">Column name</param>
         public ManyToOnePart<TOther> Column(string name)
         {
-            columns.Clear();
-            columns.Add(name);
+            columnsAndFormulas.Clear();
+            columnsAndFormulas.Add(new KeyValuePair<string, bool>(name, false));
 
             return this;
         }
@@ -234,12 +234,12 @@ namespace FluentNHibernate.Mapping
         {
             foreach (var column in newColumns)
             {
-                columns.Add(column);
+                columnsAndFormulas.Add(new KeyValuePair<string, bool>(column, false));
             }
 
             return this;
         }
-
+        
         /// <summary>
         /// Specifies the columns used in this relationship
         /// </summary>
@@ -260,7 +260,24 @@ namespace FluentNHibernate.Mapping
         /// <param name="formula">Formula</param>
         public ManyToOnePart<TOther> Formula(string formula)
         {
-            attributes.Set("Formula", Layer.UserSupplied, formula);
+            columnsAndFormulas.Clear();
+            columnsAndFormulas.Add(new KeyValuePair<string, bool>(formula, true));
+
+            return this;
+        }
+
+
+        /// <summary>
+        /// Specifies the formulas used in this relationship
+        /// </summary>
+        /// <param name="newFormulas">Formulas</param>
+        public ManyToOnePart<TOther> Formulas(params string[] newFormulas)
+        {
+            foreach (var formula in newFormulas)
+            {
+                columnsAndFormulas.Add(new KeyValuePair<string, bool>(formula, true));
+            }
+
             return this;
         }
 
@@ -353,12 +370,12 @@ namespace FluentNHibernate.Mapping
             mapping.Set(x => x.Name, Layer.Defaults, member.Name);
             mapping.Set(x => x.Class, Layer.Defaults, new TypeReference(typeof(TOther)));
 
-            if (columns.Count == 0 && !mapping.IsSpecified("Formula"))
-                mapping.AddColumn(Layer.Defaults, CreateColumn(member.Name + "_id"));
+            if (columnsAndFormulas.Count == 0 && !mapping.IsSpecified("Formula"))
+                mapping.AddColumn(Layer.Defaults, CreateColumn(member.Name + "_id", false));
 
-            foreach (var column in columns)
+            foreach (var columnOrFormula in columnsAndFormulas)
             {
-                var columnMapping = CreateColumn(column);
+                var columnMapping = CreateColumn(columnOrFormula.Key, columnOrFormula.Value);
 
                 mapping.AddColumn(Layer.UserSupplied, columnMapping);
             }
@@ -366,10 +383,14 @@ namespace FluentNHibernate.Mapping
             return mapping;
         }
 
-        ColumnMapping CreateColumn(string column)
+        ColumnMapping CreateColumn(string columnOrFormula, bool isFormula)
         {
             var columnMapping = new ColumnMapping(columnAttributes.Clone());
-            columnMapping.Set(x => x.Name, Layer.Defaults, column);
+            if (isFormula) {
+                columnMapping.Set(x => x.Formula, Layer.Defaults, columnOrFormula);
+            } else {
+                columnMapping.Set(x => x.Name, Layer.Defaults, columnOrFormula);
+            }
             return columnMapping;
         }
 
