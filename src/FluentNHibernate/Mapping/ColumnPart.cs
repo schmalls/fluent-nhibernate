@@ -40,6 +40,17 @@ namespace FluentNHibernate.Mapping
             return this;
         }
 
+
+        /// <summary>
+        /// Specify a formula
+        /// </summary>
+        /// <param name="formula">Formula</param>
+        public ColumnPart Formula(string formula)
+        {
+            columnMapping.Set(x => x.Formula, Layer.UserSupplied, formula);
+            return this;
+        }
+
         /// <summary>
         /// Specify the column length
         /// </summary>
